@@ -114,6 +114,7 @@ if __name__ == '__main__':
     logger.info(args)
     if args.cfg_file is not None:
         merge_cfg_from_file(args.cfg_file)
+    print(cfg.MODEL.NUM_CLASSES)
     if args.opts is not None:
         merge_cfg_from_list(args.opts)
     assert_and_infer_cfg()

@@ -133,6 +133,7 @@ def test_net_on_dataset(
 ):
     """Run inference on a dataset."""
     dataset = JsonDataset(dataset_name)
+    #import ipdb; ipdb.set_trace()
     test_timer = Timer()
     test_timer.tic()
     if multi_gpu:
