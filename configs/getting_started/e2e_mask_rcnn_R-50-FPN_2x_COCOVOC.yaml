@@ -44,4 +44,4 @@ TEST:
   NMS: 0.5
   RPN_PRE_NMS_TOP_N: 1000  # Per FPN level
   RPN_POST_NMS_TOP_N: 1000
-OUTPUT_DIR: /mnt/3tb/detectron/detectron-output/cocovoc/r50_fpn_agnostic
+OUTPUT_DIR: /mnt/2b/detectron/detectron-output/cocovoc/r50_fpn_agnostic
