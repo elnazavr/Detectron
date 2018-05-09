@@ -214,11 +214,8 @@ __C.TEST.WEIGHTS = b''
 # If multiple datasets are listed, testing is performed on each one sequentially
 __C.TEST.DATASETS = ()
 
-# Scales to use during testing
-# Each scale is the pixel size of an image's shortest side
-# If multiple scales are given, then all scales are used as in multiscale
-# inference
-__C.TEST.SCALES = (600, )
+# Scale to use during testing
+__C.TEST.SCALE = 600
 
 # Max pixel size of the longest side of a scaled input image
 __C.TEST.MAX_SIZE = 1000
@@ -275,14 +272,6 @@ __C.TEST.FORCE_JSON_DATASET_EVAL = False
 # Indicates if precomputed proposals are used at test time
 # Not set for 1-stage models and 2-stage models with RPN subnetwork enabled
 __C.TEST.PRECOMPUTED_PROPOSALS = True
-
-# [Inferred value; do not set directly in a config]
-# Active dataset to test on
-__C.TEST.DATASET = b''
-
-# [Inferred value; do not set directly in a config]
-# Active proposal file to use
-__C.TEST.PROPOSAL_FILE = b''
 
 
 # ---------------------------------------------------------------------------- #
@@ -969,7 +958,7 @@ __C.CLUSTER.ON_CLUSTER = False
 # yaml configs, you can add the full config key as a string to the set below.
 # ---------------------------------------------------------------------------- #
 _DEPCRECATED_KEYS = set(
-    (
+    {
         'FINAL_MSG',
         'MODEL.DILATION',
         'ROOT_GPU_ID',
@@ -978,7 +967,7 @@ _DEPCRECATED_KEYS = set(
         'TRAIN.DROPOUT',
         'USE_GPU_NMS',
         'TEST.NUM_TEST_IMAGES',
-    )
+    }
 )
 
 # ---------------------------------------------------------------------------- #
@@ -1007,16 +996,40 @@ _RENAMED_KEYS = {
         "'path/to/file1:path/to/file2' -> " +
         "('path/to/file1', 'path/to/file2')"
     ),
+    'TEST.SCALES': (
+        'TEST.SCALE',
+        "Also convert from a tuple, e.g. (600, ), " +
+        "to a integer, e.g. 600."
+    ),
+    'TEST.DATASET': (
+        'TEST.DATASETS',
+        "Also convert from a string, e.g 'coco_2014_minival', " +
+        "to a tuple, e.g. ('coco_2014_minival', )."
+    ),
+    'TEST.PROPOSAL_FILE': (
+        'TEST.PROPOSAL_FILES',
+        "Also convert from a string, e.g. '/path/to/props.pkl', " +
+        "to a tuple, e.g. ('/path/to/props.pkl', )."
+    ),
 }
 
 
-def assert_and_infer_cfg(cache_urls=True):
+def assert_and_infer_cfg(cache_urls=True, make_immutable=True):
+    """Call this function in your script after you have finished setting all cfg
+    values that are necessary (e.g., merging a config from a file, merging
+    command line config options, etc.). By default, this function will also
+    mark the global cfg as immutable to prevent changing the global cfg settings
+    during script execution (which can lead to hard to debug errors or code
+    that's harder to understand than is necessary).
+    """
     if __C.MODEL.RPN_ONLY or __C.MODEL.FASTER_RCNN:
         __C.RPN.RPN_ON = True
     if __C.RPN.RPN_ON or __C.RETINANET.RETINANET_ON:
         __C.TEST.PRECOMPUTED_PROPOSALS = False
     if cache_urls:
         cache_cfg_urls()
+    if make_immutable:
+        cfg.immutable(True)
 
 
 def cache_cfg_urls():
@@ -1026,20 +1039,22 @@ def cache_cfg_urls():
     __C.TRAIN.WEIGHTS = cache_url(__C.TRAIN.WEIGHTS, __C.DOWNLOAD_CACHE)
     __C.TEST.WEIGHTS = cache_url(__C.TEST.WEIGHTS, __C.DOWNLOAD_CACHE)
     __C.TRAIN.PROPOSAL_FILES = tuple(
-        [cache_url(f, __C.DOWNLOAD_CACHE) for f in __C.TRAIN.PROPOSAL_FILES]
+        cache_url(f, __C.DOWNLOAD_CACHE) for f in __C.TRAIN.PROPOSAL_FILES
     )
     __C.TEST.PROPOSAL_FILES = tuple(
-        [cache_url(f, __C.DOWNLOAD_CACHE) for f in __C.TEST.PROPOSAL_FILES]
+        cache_url(f, __C.DOWNLOAD_CACHE) for f in __C.TEST.PROPOSAL_FILES
     )
 
 
-def get_output_dir(training=True):
+def get_output_dir(datasets, training=True):
     """Get the output directory determined by the current global config."""
-    dataset = __C.TRAIN.DATASETS if training else __C.TEST.DATASETS
-    dataset = ':'.join(dataset)
+    assert isinstance(datasets, (tuple, list, basestring)), \
+        'datasets argument must be of type tuple, list or string'
+    is_string = isinstance(datasets, basestring)
+    dataset_name = datasets if is_string else ':'.join(datasets)
     tag = 'train' if training else 'test'
-    # <output-dir>/<train|test>/<dataset>/<model-type>/
-    outdir = osp.join(__C.OUTPUT_DIR, tag, dataset, __C.MODEL.TYPE)
+    # <output-dir>/<train|test>/<dataset-name>/<model-type>/
+    outdir = osp.join(__C.OUTPUT_DIR, tag, dataset_name, __C.MODEL.TYPE)
     if not osp.exists(outdir):
         os.makedirs(outdir)
     return outdir
@@ -1061,6 +1076,7 @@ def merge_cfg_from_list(cfg_list):
     """Merge config keys, values in a list (e.g., from command line) into the
     global config. For example, `cfg_list = ['TEST.NMS', 0.5]`.
     """
+    #print(cfg_list)
     assert len(cfg_list) % 2 == 0
     for full_key, v in zip(cfg_list[0::2], cfg_list[1::2]):
         if _key_is_deprecated(full_key):
@@ -1069,6 +1085,7 @@ def merge_cfg_from_list(cfg_list):
             _raise_key_rename_error(full_key)
         key_list = full_key.split('.')
         d = __C
+        #print(d)
         for subkey in key_list[:-1]:
             assert subkey in d, 'Non-existent key: {}'.format(full_key)
             d = d[subkey]

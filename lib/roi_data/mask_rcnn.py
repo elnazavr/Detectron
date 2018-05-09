@@ -41,12 +41,13 @@ def add_mask_rcnn_blobs(blobs, sampled_boxes, roidb, im_scale, batch_idx):
     M = cfg.MRCNN.RESOLUTION
     polys_gt_inds = np.where(
         (roidb['gt_classes'] > 0) & (roidb['is_crowd'] == 0)
-    )[0]
+    )[0] #can be added attribute has_segmentation
     polys_gt = [roidb['segms'][i] for i in polys_gt_inds]
     boxes_from_polys = segm_utils.polys_to_boxes(polys_gt)
     fg_inds = np.where(blobs['labels_int32'] > 0)[0]
-    roi_has_mask = blobs['labels_int32'].copy()
-    roi_has_mask[roi_has_mask > 0] = 1
+    roi_has_mask = blobs['labels_int32'].copy() # labels_int32 blob: R categorical labels in [0, ..., K] for K
+        # foreground classes plus background
+    roi_has_mask[roi_has_mask > 0] = 1 #if it is not a background
 
     if fg_inds.shape[0] > 0:
         # Class labels for the foreground rois

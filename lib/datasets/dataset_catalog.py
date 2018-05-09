@@ -214,6 +214,18 @@ DATASETS = {
         DEVKIT_DIR:
             _DATA_DIR + '/VOC2012/VOCdevkit'
     },
+    'cocovoc_train': {
+        IM_DIR:
+            _DATA_DIR + '/cocovoc/images',
+        ANN_FN:
+            _DATA_DIR + '/cocovoc/annotations_cocovoc_train.json',
+    },
+    'cocovoc_val': {
+        IM_DIR:
+            _DATA_DIR + '/cocovoc/images',
+        ANN_FN:
+            _DATA_DIR + '/cocovoc/annotations_cocovoc_val.json',
+    },
     'invoices_all180122_train': {
         IM_DIR:
             _DATA_DIR + '/rossum/fixed_size_data/',
