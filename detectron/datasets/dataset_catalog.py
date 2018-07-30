@@ -114,13 +114,13 @@ _DATASETS = {
         _IM_DIR:
             _DATA_DIR + '/coco/tain2017',
         _ANN_FN:
-            _DATA_DIR + '/coco/annotations/instances_val2017.json'
+            _DATA_DIR + '/coco/annotations/instances_train2017.json'
     },
     'coco_2017_test': {  # 2017 test uses 2015 test images
         _IM_DIR:
             _DATA_DIR + '/coco/test2017',
-        ANN_FN:
-            _DATA_DIR + '/coco/annotations/instances_val2017.json'
+        _ANN_FN:
+            _DATA_DIR + '/coco/annotations/instances_test2017.json'
     },
     'coco_2017_test-dev': {  # 2017 test-dev uses 2015 test images
         _IM_DIR:
